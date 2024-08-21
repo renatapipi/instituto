@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Ventas Básico</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .section {
+            display: none;
+            margin-bottom: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        .button-group {
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sistema de Ventas Básico</h1>
+        
+        <div class="button-group">
+            <button onclick="showSection('productManagementSection')">Gestión de Productos</button>
+            <button onclick="showSection('posSection')">Punto de Venta (POS)</button>
+            <button onclick="showSection('inventorySection')">Inventario</button>
+            <button onclick="showSection('reportsSection')">Reportes</button>
+        </div>
+        <div id="productManagementSection" class="section">  
+            <h2>Gestión de Productos</h2>  
+            <input type="text" id="productID" placeholder="ID del Producto">  
+            <input type="text" id="productName" placeholder="Nombre del Producto">  
+            <input type="number" id="productPrice" placeholder="Precio">  
+            <input type="number" id="productStock" placeholder="Stock">  
+            <button onclick="addProduct()">Agregar Producto</button>  
+            <button onclick="modifyProduct()">Modificar Producto</button>  
+        </div>
+
+        <!-- Sección para gestión de productos -->
+        <div id="productManagementSection" class="section">
+            <h2>Gestión de Productos</h2>
+            <input type="text" id="productID" placeholder="ID del Producto">
+            <input type="text" id="productName" placeholder="Nombre del Producto">
+            <input type="number" id="productPrice" placeholder="Precio">
+            <input type="number" id="productStock" placeholder="Stock">
+            <button onclick="addProduct()">Agregar Producto</button>
+        </div>
+        function modifyProduct() {  
+            const id = document.getElementById('productID').value;  
+            const name = document.getElementById('productName').value;  
+            const price = parseFloat(document.getElementById('productPrice').value);  
+            const stock = parseInt(document.getElementById('productStock').value);  
+            
+            if (id && name && price && stock >= 0) {  
+                const productIndex = products.findIndex(p => p.id === id);  
+                if (productIndex !== -1) {  
+                    products[productIndex].name = name;  
+                    products[productIndex].price = price;  
+                    products[productIndex].stock = stock;  
+                    localStorage.setItem('products', JSON.stringify(products));  
+                    updateInventory();  
+                    updateProductSelect();  
+                    document.getElementById('productID').value = '';  
+                    document.getElementById('productName').value = '';  
+                    document.getElementById('productPrice').value = '';  
+                    document.getElementById('productStock').value = '';  
+                } else {  
+                    alert('No se encontró el producto con el ID proporcionado.');  
+                }  
+            }  
+        }
+
+        <!-- Sección para Punto de Venta (POS) -->
+        <div id="posSection" class="section">
+            <h2>Punto de Venta (POS)</h2>
+            <select id="productSelect">
+                <!-- Opciones de productos se cargarán aquí dinámicamente -->
+            </select>
+            <input type="number" id="productQuantity" placeholder="Cantidad">
+            <button onclick="addToCart()">Agregar al Carrito</button>
+            <h3>Carrito de Compras</h3>
+            <table id="cartTable">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Cantidad</th>
+                        <th>Precio</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+            <h3>Total: $<span id="cartTotal">0.00</span></h3>
+            <button onclick="completeSale()">Completar Venta</button>
+        </div>
+
+        <!-- Sección para control de inventario -->
+        <div id="inventorySection" class="section">
+            <h2>Inventario</h2>
+            <table id="inventoryTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Producto</th>
+                        <th>Stock</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Sección para generación de reportes -->
+        <div id="reportsSection" class="section">
+            <h2>Reportes</h2>
+            <button onclick="exportToExcel()">Exportar Reporte de Ventas</button>
+            <button onclick="clearSalesHistory()">Limpiar Historial de Ventas</button> <!-- Botón agregado -->
+            <table id="salesReportTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Producto</th>
+                        <th>Cantidad Vendida</th>
+                        <th>Total Venta</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const products = JSON.parse(localStorage.getItem('products')) || [];
+        const cart = [];
+        const salesReport = JSON.parse(localStorage.getItem('salesReport')) || [];
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.style.display = 'none';
+            });
+            document.getElementById(sectionId).style.display = 'block';
+        }
+
+        function addProduct() {
+            const id = document.getElementById('productID').value;
+            const name = document.getElementById('productName').value;
+            const price = parseFloat(document.getElementById('productPrice').value);
+            const stock = parseInt(document.getElementById('productStock').value);
+            if (id && name && price && stock >= 0) {
+                products.push({ id, name, price, stock });
+                localStorage.setItem('products', JSON.stringify(products));
+                updateInventory();
+                updateProductSelect();
+                document.getElementById('productID').value = '';
+                document.getElementById('productName').value = '';
+                document.getElementById('productPrice').value = '';
+                document.getElementById('productStock').value = '';
+            }
+        }
+
+        function updateProductSelect() {
+            const productSelect = document.getElementById('productSelect');
+            productSelect.innerHTML = '';
+            products.forEach(product => {
+                const option = document.createElement('option');
+                option.value = product.id;
+                option.textContent = `${product.name} - $${product.price}`;
+                productSelect.appendChild(option);
+            });
+        }
+
+        function addToCart() {
+            const productId = document.getElementById('productSelect').value;
+            const quantity = parseInt(document.getElementById('productQuantity').value);
+            const product = products.find(p => p.id === productId);
+            if (product && quantity > 0 && quantity <= product.stock) {
+                cart.push({ ...product, quantity });
+                product.stock -= quantity;
+                updateCart();
+                updateInventory();
+            }
+        }
+
+        function updateCart() {
+            const cartTableBody = document.querySelector('#cartTable tbody');
+            cartTableBody.innerHTML = '';
+            let total = 0;
+            cart.forEach(item => {
+                const row = cartTableBody.insertRow();
+                row.insertCell(0).textContent = item.name;
+                row.insertCell(1).textContent = item.quantity;
+                row.insertCell(2).textContent = item.price.toFixed(2);
+                row.insertCell(3).textContent = (item.price * item.quantity).toFixed(2);
+                total += item.price * item.quantity;
+            });
+            document.getElementById('cartTotal').textContent = total.toFixed(2);
+        }
+
+        function completeSale() {
+            if (cart.length > 0) {
+                cart.forEach(item => {
+                    const existingSale = salesReport.find(s => s.id === item.id);
+                    if (existingSale) {
+                        existingSale.quantity += item.quantity;
+                        existingSale.totalSale += item.price * item.quantity;
+                    } else {
+                        salesReport.push({
+                            id: item.id,
+                            name: item.name,
+                            quantity: item.quantity,
+                            totalSale: item.price * item.quantity
+                        });
+                    }
+                });
+                localStorage.setItem('salesReport', JSON.stringify(salesReport));
+                cart.length = 0;
+                updateCart();
+                updateSalesReport();
+            }
+        }
+
+        function updateInventory() {
+            const inventoryTableBody = document.querySelector('#inventoryTable tbody');
+            inventoryTableBody.innerHTML = '';
+            products.forEach(product => {
+                const row = inventoryTableBody.insertRow();
+                row.insertCell(0).textContent = product.id;
+                row.insertCell(1).textContent = product.name;
+                row.insertCell(2).textContent = product.stock;
+            });
+        }
+
+        function updateSalesReport() {
+            const salesReportTableBody = document.querySelector('#salesReportTable tbody');
+            salesReportTableBody.innerHTML = '';
+            salesReport.forEach(sale => {
+                const row = salesReportTableBody.insertRow();
+                row.insertCell(0).textContent = sale.id;
+                row.insertCell(1).textContent = sale.name;
+                row.insertCell(2).textContent = sale.quantity;
+                row.insertCell(3).textContent = sale.totalSale.toFixed(2);
+            });
+        }
+
+        function clearSalesHistory() {
+            // Vaciar el historial de ventas
+            salesReport.length = 0;
+            localStorage.setItem('salesReport', JSON.stringify(salesReport));
+            
+            // Actualizar la tabla de reportes
+            updateSalesReport();
+        }
+
+        function exportToExcel() {
+            let table = document.getElementById("salesReportTable");
+            let rows = table.rows;
+            let csvContent = "data:text/csv;charset=utf-8,";
+
+            for (let i = 0; i < rows.length; i++) {
+                let row = rows[i];
+                let cols = row.querySelectorAll("td, th");
+                let rowData = [];
+                cols.forEach(col => {
+                    rowData.push(col.textContent);
+                });
+                csvContent += rowData.join(",") + "\r\n";
+            }
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "reporte_ventas.csv");
+            document.body.appendChild(link);
+            link.click();
+        }
+
+        // Initialize the system
+        updateInventory();
+        updateProductSelect();
+        updateSalesReport();
+    </script>
+</body>
+</html>
